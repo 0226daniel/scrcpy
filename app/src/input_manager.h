@@ -31,6 +31,9 @@ input_manager_process_mouse_motion(struct input_manager *im,
                                    const SDL_MouseMotionEvent *event);
 
 void
+input_manager_perform_touch(struct input_manager *im, float x, float y, int action, float pressure, int fingerId);
+
+void
 input_manager_process_touch(struct input_manager *im,
                             const SDL_TouchFingerEvent *event);
 

@@ -1,6 +1,7 @@
 #include "input_manager.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "event_converter.h"
@@ -252,6 +253,40 @@ convert_input_key(const SDL_KeyboardEvent *from, struct control_msg *to,
     return true;
 }
 
+#define PRESSED_KEY_LIMIT 100
+int pressed_keys[PRESSED_KEY_LIMIT] = {};
+int pressed_keys_idx = 0;
+
+bool find_pressed_keys(int keycode){
+    for(int i=0;i<PRESSED_KEY_LIMIT;i++){
+        if(pressed_keys[i] == keycode)
+            return true;
+    }
+    return false;
+}
+
+bool add_pressed_keys(int keycode){
+    if(!find_pressed_keys(keycode)){
+        for(int i=0;i<PRESSED_KEY_LIMIT;i++){
+            if(pressed_keys[i] == 0){
+                pressed_keys[i] = keycode;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool remove_pressed_keys(int keycode){
+    for(int i=0;i<PRESSED_KEY_LIMIT;i++){
+        if(pressed_keys[i] == keycode){
+            pressed_keys[i] = 0;
+            return true;
+        }
+    }
+    return false;
+}
+
 void
 input_manager_process_key(struct input_manager *im,
                           const SDL_KeyboardEvent *event,
@@ -263,6 +298,56 @@ input_manager_process_key(struct input_manager *im,
     bool alt = event->keysym.mod & (KMOD_LALT | KMOD_RALT);
     bool meta = event->keysym.mod & (KMOD_LGUI | KMOD_RGUI);
 
+    SDL_Keycode keycode = event->keysym.sym;
+    bool down = event->type == SDL_KEYDOWN;
+    int action = down ? ACTION_DOWN : ACTION_UP;
+    //bool repeat = event->repeat;
+    //bool shift = event->keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT);
+
+    int touchAction;
+    if(action == 1){
+        if(add_pressed_keys(keycode)){
+            printf("Down %d\n", keycode);
+            touchAction = 0;
+        }else{
+            return;
+            printf("Move %d\n", keycode);
+            touchAction = 2;
+        }
+    }else if(action == 2){
+        remove_pressed_keys(keycode);
+        printf("Up   %d\n", keycode);
+        touchAction = 1;
+    }
+
+    switch (keycode){
+        case 1073742048://ctrl
+            input_manager_perform_touch(im, 0.844884, 0.536377, touchAction, 1.0, 0);
+            return;
+        case 1073742050://alt
+            input_manager_perform_touch(im, 0.916832, 0.524964, touchAction, 1.0, 1);
+            return;
+        case 1073742049://shift
+            input_manager_perform_touch(im, 0.881848, 0.776034, touchAction, 1.0, 2);
+            return;
+        case 1073741906://up
+            input_manager_perform_touch(im, 0.774917, 0.667618, touchAction, 1.0, 3);
+            return;
+        case 1073741905://down
+            input_manager_perform_touch(im, 0.769637, 0.895863, touchAction, 1.0, 4);
+            return;
+        case 1073741904://left
+            input_manager_perform_touch(im, 0.116832, 0.773181, touchAction, 1.0, 5);
+            return;
+        case 1073741903://right
+            input_manager_perform_touch(im, 0.242244, 0.766049, touchAction, 1.0, 6);
+            return;
+
+    }
+
+    
+
+    
     // use Cmd on macOS, Ctrl on other platforms
 #ifdef __APPLE__
     bool cmd = !ctrl && meta;
@@ -454,6 +539,28 @@ input_manager_process_mouse_motion(struct input_manager *im,
 }
 
 static bool
+make_touch(struct screen *screen, float x_, float y_, int action, float pressure, int fingerId, struct control_msg *to){
+    to->type = CONTROL_MSG_TYPE_INJECT_TOUCH_EVENT;
+    to->inject_touch_event.action = action;
+    to->inject_touch_event.pointer_id = fingerId;
+    to->inject_touch_event.position.screen_size = screen->frame_size;
+
+    int ww;
+    int wh;
+    SDL_GL_GetDrawableSize(screen->window, &ww, &wh);
+
+    // SDL touch event coordinates are normalized in the range [0; 1]
+    int32_t x = x_ * ww;
+    int32_t y = y_ * wh;
+    to->inject_touch_event.position.point =
+        screen_convert_to_frame_coords(screen, x, y);
+
+    to->inject_touch_event.pressure = pressure;
+    to->inject_touch_event.buttons = 0;
+    return true;
+}
+
+static bool
 convert_touch(const SDL_TouchFingerEvent *from, struct screen *screen,
               struct control_msg *to) {
     to->type = CONTROL_MSG_TYPE_INJECT_TOUCH_EVENT;
@@ -478,6 +585,16 @@ convert_touch(const SDL_TouchFingerEvent *from, struct screen *screen,
     to->inject_touch_event.pressure = from->pressure;
     to->inject_touch_event.buttons = 0;
     return true;
+}
+
+void
+input_manager_perform_touch(struct input_manager *im, float x, float y, int action, float pressure, int fingerId){
+    struct control_msg msg;
+    if (make_touch(im->screen, x, y, action, pressure, fingerId, &msg)) {
+        if (!controller_push_msg(im->controller, &msg)) {
+            LOGW("Could not request 'inject touch event'");
+        }
+    }
 }
 
 void
