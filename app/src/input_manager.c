@@ -321,26 +321,29 @@ input_manager_process_key(struct input_manager *im,
     }
 
     switch (keycode){
+        case 32://space bar
+            input_manager_perform_touch(im, 0.5, 0.5, touchAction, 1.0, 0);
+            return;
         case 1073742048://ctrl
-            input_manager_perform_touch(im, 0.844884, 0.536377, touchAction, 1.0, 0);
+            input_manager_perform_touch(im, 0.844884, 0.536377, touchAction, 1.0, 1);
             return;
         case 1073742050://alt
-            input_manager_perform_touch(im, 0.916832, 0.524964, touchAction, 1.0, 1);
+            input_manager_perform_touch(im, 0.916832, 0.524964, touchAction, 1.0, 2);
             return;
         case 1073742049://shift
-            input_manager_perform_touch(im, 0.881848, 0.776034, touchAction, 1.0, 2);
+            input_manager_perform_touch(im, 0.881848, 0.776034, touchAction, 1.0, 3);
             return;
         case 1073741906://up
-            input_manager_perform_touch(im, 0.774917, 0.667618, touchAction, 1.0, 3);
+            input_manager_perform_touch(im, 0.774917, 0.667618, touchAction, 1.0, 4);
             return;
         case 1073741905://down
-            input_manager_perform_touch(im, 0.769637, 0.895863, touchAction, 1.0, 4);
+            input_manager_perform_touch(im, 0.769637, 0.895863, touchAction, 1.0, 5);
             return;
         case 1073741904://left
-            input_manager_perform_touch(im, 0.116832, 0.773181, touchAction, 1.0, 5);
+            input_manager_perform_touch(im, 0.116832, 0.773181, touchAction, 1.0, 6);
             return;
         case 1073741903://right
-            input_manager_perform_touch(im, 0.242244, 0.766049, touchAction, 1.0, 6);
+            input_manager_perform_touch(im, 0.242244, 0.766049, touchAction, 1.0, 7);
             return;
 
     }
