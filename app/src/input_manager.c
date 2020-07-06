@@ -255,7 +255,6 @@ convert_input_key(const SDL_KeyboardEvent *from, struct control_msg *to,
 
 #define PRESSED_KEY_LIMIT 100
 int pressed_keys[PRESSED_KEY_LIMIT] = {};
-int pressed_keys_idx = 0;
 
 bool find_pressed_keys(int keycode){
     for(int i=0;i<PRESSED_KEY_LIMIT;i++){
@@ -287,12 +286,42 @@ bool remove_pressed_keys(int keycode){
     return false;
 }
 
+void log_pressed_keys(){
+    printf("[ ");
+    for(int i=0;i<PRESSED_KEY_LIMIT;i++){
+        if(pressed_keys[i] != 0){
+            printf(" %d ", pressed_keys[i]);
+        }
+    }
+    printf(" ]\n");
+}
+
+
+struct input_manager *gim;
+
+int control_loop_cnt = 0;
+void control_loop(){
+    int mod = control_loop_cnt++%10;
+    if(mod == 0){
+        if(find_pressed_keys(32)){
+            input_manager_perform_touch(gim, 0.5, 0.5, 0, 1.0, 0);
+        }
+    }else if (mod == 5){
+        if(find_pressed_keys(32)){
+            input_manager_perform_touch(gim, 0.5, 0.5, 1, 1.0, 0);
+        }
+    }
+    
+}
+
 void
 input_manager_process_key(struct input_manager *im,
                           const SDL_KeyboardEvent *event,
                           bool control) {
     // control: indicates the state of the command-line option --no-control
     // ctrl: the Ctrl key
+
+    gim = im;
 
     bool ctrl = event->keysym.mod & (KMOD_LCTRL | KMOD_RCTRL);
     bool alt = event->keysym.mod & (KMOD_LALT | KMOD_RALT);
@@ -307,18 +336,19 @@ input_manager_process_key(struct input_manager *im,
     int touchAction;
     if(action == 1){
         if(add_pressed_keys(keycode)){
-            printf("Down %d\n", keycode);
+            //printf("Down %d\n", keycode);
             touchAction = 0;
         }else{
-            return;
-            printf("Move %d\n", keycode);
+            //printf("Move %d\n", keycode);
             touchAction = 2;
+            return;
         }
     }else if(action == 2){
         remove_pressed_keys(keycode);
-        printf("Up   %d\n", keycode);
+        //printf("Up   %d\n", keycode);
         touchAction = 1;
     }
+    log_pressed_keys();
 
     switch (keycode){
         case 32://space bar
@@ -345,8 +375,12 @@ input_manager_process_key(struct input_manager *im,
         case 1073741903://right
             input_manager_perform_touch(im, 0.242244, 0.766049, touchAction, 1.0, 7);
             return;
+        case 27://esc
+            input_manager_perform_touch(im, 0.945124, 0.041247, touchAction, 1.0, 8);
+            return;
 
     }
+    
 
     
 

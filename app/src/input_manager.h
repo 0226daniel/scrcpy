@@ -22,6 +22,9 @@ input_manager_process_text_input(struct input_manager *im,
                                  const SDL_TextInputEvent *event);
 
 void
+control_loop();
+
+void
 input_manager_process_key(struct input_manager *im,
                           const SDL_KeyboardEvent *event,
                           bool control);

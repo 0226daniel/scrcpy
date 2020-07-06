@@ -164,6 +164,7 @@ handle_event(SDL_Event *event, bool control) {
             LOGD("User requested to quit");
             return EVENT_RESULT_STOPPED_BY_USER;
         case EVENT_NEW_FRAME:
+            control_loop();
             if (!screen.has_frame) {
                 screen.has_frame = true;
                 // this is the very first frame, show the window
