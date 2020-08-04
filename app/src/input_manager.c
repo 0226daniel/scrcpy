@@ -300,13 +300,14 @@ void log_pressed_keys(){
 struct input_manager *gim;
 
 int control_loop_cnt = 0;
+int loop_cycle_size = 6;
 void control_loop(){
-    int mod = control_loop_cnt++%10;
+    int mod = control_loop_cnt++%loop_cycle_size;
     if(mod == 0){
         if(find_pressed_keys(32)){
             input_manager_perform_touch(gim, 0.5, 0.5, 0, 1.0, 0);
         }
-    }else if (mod == 5){
+    }else if (mod == loop_cycle_size/2){
         if(find_pressed_keys(32)){
             input_manager_perform_touch(gim, 0.5, 0.5, 1, 1.0, 0);
         }
@@ -377,6 +378,9 @@ input_manager_process_key(struct input_manager *im,
             return;
         case 27://esc
             input_manager_perform_touch(im, 0.945124, 0.041247, touchAction, 1.0, 8);
+            return;
+        case 114://r
+            input_manager_perform_touch(im, 0.029531, 0.515657, touchAction, 1.0, 9);
             return;
 
     }
